@@ -3,6 +3,9 @@ package br.com.portfolio.checkout.facade;
 import br.com.portfolio.checkout.auditoria.RegistroAuditoria;
 import br.com.portfolio.checkout.domain.ItemPedido;
 import br.com.portfolio.checkout.domain.Pedido;
+import br.com.portfolio.checkout.pagamento.BoletoPagamentoStrategy;
+import br.com.portfolio.checkout.pagamento.CartaoCreditoPagamentoStrategy;
+import br.com.portfolio.checkout.pagamento.PagamentoStrategyResolver;
 import br.com.portfolio.checkout.pagamento.PixPagamentoStrategy;
 import org.junit.jupiter.api.Test;
 
@@ -16,6 +19,15 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 
 class CheckoutFacadeTest {
 
+    private CheckoutFacade criarFacade() {
+        var resolver = new PagamentoStrategyResolver(List.of(
+                new PixPagamentoStrategy(),
+                new BoletoPagamentoStrategy(),
+                new CartaoCreditoPagamentoStrategy()
+        ));
+        return new CheckoutFacade(resolver, RegistroAuditoria.INSTANCE);
+    }
+
     @Test
     void deveFinalizarCompraCalcularPagamentoERegistrarAuditoria() {
         Pedido pedido = new Pedido(
@@ -24,9 +36,8 @@ class CheckoutFacadeTest {
                 List.of(new ItemPedido("Livro", 2, new BigDecimal("50.00")))
         );
         int eventosAntes = RegistroAuditoria.INSTANCE.listarEventos().size();
-        CheckoutFacade facade = new CheckoutFacade(new PixPagamentoStrategy(), RegistroAuditoria.INSTANCE);
 
-        ResultadoCheckout resultado = facade.finalizarCompra(pedido);
+        ResultadoCheckout resultado = criarFacade().finalizarCompra(pedido, "pix");
 
         assertEquals("TESTE-FACADE-001", resultado.pedido().codigo());
         assertEquals(0, new BigDecimal("100.00").compareTo(resultado.pagamento().valorOriginal()));
@@ -39,8 +50,16 @@ class CheckoutFacadeTest {
 
     @Test
     void naoDeveFinalizarCompraComPedidoNulo() {
-        CheckoutFacade facade = new CheckoutFacade(new PixPagamentoStrategy(), RegistroAuditoria.INSTANCE);
+        assertThrows(NullPointerException.class,
+                () -> criarFacade().finalizarCompra(null, "pix"));
+    }
 
-        assertThrows(NullPointerException.class, () -> facade.finalizarCompra(null));
+    @Test
+    void deveRejeitarFormaDePagamentoDesconhecida() {
+        Pedido pedido = new Pedido("PED-ERRO", "Cliente",
+                List.of(new ItemPedido("Livro", 1, new BigDecimal("30.00"))));
+
+        assertThrows(IllegalArgumentException.class,
+                () -> criarFacade().finalizarCompra(pedido, "cripto"));
     }
 }

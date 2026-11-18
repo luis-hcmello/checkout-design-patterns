@@ -1,9 +1,17 @@
 package br.com.portfolio.checkout.pagamento;
 
+import org.springframework.stereotype.Component;
+
 import java.math.BigDecimal;
 
 /** Regra demonstrativa: pagamento via PIX recebe 5% de desconto. */
+@Component
 public class PixPagamentoStrategy implements PagamentoStrategy {
+
+    @Override
+    public String codigo() {
+        return "PIX";
+    }
 
     @Override
     public String nome() {

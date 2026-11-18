@@ -7,6 +7,8 @@ import java.util.Objects;
 /** Contrato comum para as diferentes regras de cálculo de pagamento. */
 public interface PagamentoStrategy {
 
+    String codigo();
+
     String nome();
 
     ResultadoPagamento calcular(BigDecimal valorPedido);

@@ -1,9 +1,17 @@
 package br.com.portfolio.checkout.pagamento;
 
+import org.springframework.stereotype.Component;
+
 import java.math.BigDecimal;
 
 /** Regra demonstrativa: pagamento com cartão recebe uma taxa de 2%. */
+@Component
 public class CartaoCreditoPagamentoStrategy implements PagamentoStrategy {
+
+    @Override
+    public String codigo() {
+        return "CARTAO";
+    }
 
     @Override
     public String nome() {
